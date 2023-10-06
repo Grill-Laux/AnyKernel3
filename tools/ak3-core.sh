@@ -1,5 +1,5 @@
 ### AnyKernel methods (DO NOT CHANGE)
-## osm0sis @ xda-developers
+## osm0sis @ xda-developers | translate by gl
 
 [ "$OUTFD" ] || OUTFD=$1;
 
@@ -69,7 +69,7 @@ split_boot() {
   local dumpfail;
 
   if [ ! -e "$(echo $block | cut -d\  -f1)" ]; then
-    abort "Invalid partition. Aborting...";
+    abort "<!> 分区无效,停止刷入...";
   fi;
   if [ "$(echo $block | grep ' ')" ]; then
     block=$(echo $block | cut -d\  -f1);
@@ -135,7 +135,7 @@ split_boot() {
   fi;
 
   if [ $? != 0 -o "$dumpfail" ]; then
-    abort "Dumping/splitting image failed. Aborting...";
+    abort "<!> 转储或分割镜像失败,停止刷入...";
   fi;
   cd $home;
 }
@@ -156,13 +156,13 @@ unpack_ramdisk() {
   if [ -f ramdisk.cpio ]; then
     comp=$($bin/magiskboot decompress ramdisk.cpio 2>&1 | grep -v 'raw' | sed -n 's;.*\[\(.*\)\];\1;p');
   else
-    abort "No ramdisk found to unpack. Aborting...";
+    abort "<!> 没有找到可解包的ramdisk,停止刷入...";
   fi;
   if [ "$comp" ]; then
     mv -f ramdisk.cpio ramdisk.cpio.$comp;
     $bin/magiskboot decompress ramdisk.cpio.$comp ramdisk.cpio;
     if [ $? != 0 ] && $comp --help 2>/dev/null; then
-      echo "Attempting ramdisk unpack with busybox $comp..." >&2;
+      echo "<i> 尝试使用busybox解包ramdisk $comp..." >&2;
       $comp -dc ramdisk.cpio.$comp > ramdisk.cpio;
     fi;
   fi;
@@ -174,7 +174,7 @@ unpack_ramdisk() {
   cd $ramdisk;
   EXTRACT_UNSAFE_SYMLINKS=1 cpio -d -F $split_img/ramdisk.cpio -i;
   if [ $? != 0 -o ! "$(ls)" ]; then
-    abort "Unpacking ramdisk failed. Aborting...";
+    abort "<!> 解包ramdisk失败,停止刷入...";
   fi;
   if [ -d "$home/rdtmp" ]; then
     cp -af $home/rdtmp/* .;
@@ -194,7 +194,7 @@ repack_ramdisk() {
 
   cd $home;
   if [ "$ramdisk_compression" != "auto" ] && [ "$(grep HEADER_VER $split_img/infotmp | sed -n 's;.*\[\(.*\)\];\1;p')" -gt 3 ]; then
-    ui_print " " "Warning: Only lz4-l ramdisk compression is allowed with hdr v4+ images. Resetting to auto...";
+    ui_print " " "<i> hdr_v4+镜像仅允许lz4-l格式的ramdisk压缩,重置为自动...";
     ramdisk_compression=auto;
   fi;
   case $ramdisk_compression in
@@ -224,14 +224,14 @@ repack_ramdisk() {
   if [ "$comp" ]; then
     $bin/magiskboot compress=$comp ramdisk-new.cpio;
     if [ $? != 0 ] && $comp --help 2>/dev/null; then
-      echo "Attempting ramdisk repack with busybox $comp..." >&2;
+      echo "<i> 尝试使用busybox打包ramdisk... $comp..." >&2;
       $comp -9c ramdisk-new.cpio > ramdisk-new.cpio.$comp;
       [ $? != 0 ] && packfail=1;
       rm -f ramdisk-new.cpio;
     fi;
   fi;
   if [ "$packfail" ]; then
-    abort "Repacking ramdisk failed. Aborting...";
+    abort "<!> 打包ramdisk错误,停止刷入...";
   fi;
 
   if [ -f "$bin/mkmtkhdr" -a -f "$split_img/boot.img-base" ]; then
@@ -326,7 +326,7 @@ flash_boot() {
           magisk_patched=$?;
         fi;
         if [ $((magisk_patched & 3)) -eq 1 ]; then
-          ui_print " " "Magisk detected! Patching kernel so reflashing Magisk is not necessary...";
+          ui_print " " "<i> 检测到magisk!正在进行修补,稍后无需重新刷入magisk...";
           comp=$($bin/magiskboot decompress kernel 2>&1 | grep -vE 'raw|zimage' | sed -n 's;.*\[\(.*\)\];\1;p');
           ($bin/magiskboot split $kernel || $bin/magiskboot decompress $kernel kernel) 2>/dev/null;
           if [ $? != 0 -a "$comp" ] && $comp --help 2>/dev/null; then
@@ -352,7 +352,7 @@ flash_boot() {
             [ -f $fdt ] && $bin/magiskboot dtb $fdt patch; # remove dtb verity/avb
           done;
         elif [ -d /data/data/me.weishu.kernelsu ] && [ "$(file_getprop $home/anykernel.sh do.modules)" == 1 ] && [ "$(file_getprop $home/anykernel.sh do.systemless)" == 1 ]; then
-          ui_print " " "KernelSU detected! Setting up for kernel helper module...";
+          ui_print " " "<i> 检测到kernelsu!正在设置内核帮助程序模块...";
           comp=$($bin/magiskboot decompress kernel 2>&1 | grep -vE 'raw|zimage' | sed -n 's;.*\[\(.*\)\];\1;p');
           ($bin/magiskboot split $kernel || $bin/magiskboot decompress $kernel kernel) 2>/dev/null;
           if [ $? != 0 -a "$comp" ] && $comp --help 2>/dev/null; then
@@ -365,13 +365,13 @@ flash_boot() {
             grep -E -m1 'Linux version.*#' stringstmp > $home/vertmp;
             [ -d $ramdisk/overlay.d ] && ui_print " " "Warning: overlay.d detected in ramdisk but not currently supported by KernelSU!";
           else
-            ui_print " " "Warning: No KernelSU support detected in kernel!";
+            ui_print " " "<!> 内核未支持kernelsu!";
           fi;
           rm -f stringstmp;
           if [ "$comp" ]; then
             $bin/magiskboot compress=$comp kernel kernel.$comp;
             if [ $? != 0 ] && $comp --help 2>/dev/null; then
-              echo "Attempting kernel repack with busybox $comp..." >&2;
+              echo "<i> 尝试使用busybox打包内核... $comp..." >&2;
               $comp -9c kernel > kernel.$comp;
             fi;
             mv -f kernel.$comp kernel;
@@ -395,7 +395,7 @@ flash_boot() {
     $bin/magiskboot repack $nocompflag $bootimg $home/boot-new.img;
   fi;
   if [ $? != 0 ]; then
-    abort "Repacking image failed. Aborting...";
+    abort "<!> 打包镜像错误,停止刷入...";
   fi;
   [ "$PATCHVBMETAFLAG" ] && unset PATCHVBMETAFLAG;
   [ -f .magisk ] && touch $home/magisk_patched;
@@ -403,7 +403,7 @@ flash_boot() {
   cd $home;
   if [ -f "$bin/futility" -a -d "$bin/chromeos" ]; then
     if [ -f "$split_img/chromeos" ]; then
-      echo "Signing with CHROMEOS..." >&2;
+      echo "<i> 正在签名chromeos..." >&2;
       $bin/futility vbutil_kernel --pack boot-new-signed.img --keyblock $bin/chromeos/kernel.keyblock --signprivate $bin/chromeos/kernel_data_key.vbprivk --version 1 --vmlinuz boot-new.img --bootloader $bin/chromeos/empty --config $bin/chromeos/empty --arch arm --flags 0x1;
     fi;
     [ $? != 0 ] && signfail=1;
@@ -417,25 +417,25 @@ flash_boot() {
     esac;
     if [ -f "$bin/boot_signer-dexed.jar" ]; then
       if [ -f /system/bin/dalvikvm ] && [ "$(/system/bin/dalvikvm -Xnoimage-dex2oat -cp $bin/boot_signer-dexed.jar com.android.verity.BootSignature -verify boot.img 2>&1 | grep VALID)" ]; then
-        echo "Signing with AVBv1 /$avbtype..." >&2;
+        echo "<i> 正在签名 AVBv1 /$avbtype..." >&2;
         /system/bin/dalvikvm -Xnoimage-dex2oat -cp $bin/boot_signer-dexed.jar com.android.verity.BootSignature /$avbtype boot-new.img $pk8 $cert boot-new-signed.img;
       fi;
     else
       if $bin/magiskboot verify boot.img; then
-        echo "Signing with AVBv1 /$avbtype..." >&2;
+        echo "<i> 正在签名 AVBv1 /$avbtype..." >&2;
         $bin/magiskboot sign /$avbtype boot-new.img $cert $pk8;
       fi;
     fi;
   fi;
   if [ $? != 0 -o "$signfail" ]; then
-    abort "Signing image failed. Aborting...";
+    abort "<!> 签名镜像错误,停止刷入...";
   fi;
   mv -f boot-new-signed.img boot-new.img 2>/dev/null;
 
   if [ ! -f boot-new.img ]; then
-    abort "No repacked image found to flash. Aborting...";
+    abort "<!> 没有可刷入的镜像,停止刷入...";
   elif [ "$(wc -c < boot-new.img)" -gt "$(wc -c < boot.img)" ]; then
-    abort "New image larger than target partition. Aborting...";
+    abort "<!> 新镜像大小大于分区大小,停止刷入...";
   fi;
   blockdev --setrw $block 2>/dev/null;
   if [ -f "$bin/flash_erase" -a -f "$bin/nandwrite" ]; then
@@ -448,7 +448,7 @@ flash_boot() {
     cat boot-new.img /dev/zero > $block 2>/dev/null || true;
   fi;
   if [ $? != 0 ]; then
-    abort "Flashing image failed. Aborting...";
+    abort "<!> 刷入镜像失败,停止刷入...";
   fi;
 }
 
@@ -474,19 +474,19 @@ flash_generic() {
       done;
     done;
     if [ ! "$imgblock" ]; then
-      abort "$1 partition could not be found. Aborting...";
+      abort "$1 <!> 没有找到分区,停止刷入...";
     fi;
     if [ ! "$no_block_display" ]; then
       ui_print " " "$imgblock";
     fi;
     if [ "$path" == "/dev/block/mapper" ]; then
       avb=$($bin/httools_static avb $1);
-      [ $? == 0 ] || abort "Failed to parse fstab entry for $1. Aborting...";
+      [ $? == 0 ] || abort "<!> 无法解析 $1 的fstab条目,停止刷入...";
       if [ "$avb" ]; then
         flags=$($bin/httools_static disable-flags);
         [ $? == 0 ] || abort "Failed to parse top-level vbmeta. Aborting...";
         if [ "$flags" == "enabled" ]; then
-          ui_print " " "dm-verity detected! Patching $avb...";
+          ui_print " " "<i> 检测到dm校验!正在修补 $avb...";
           for avbpath in /dev/block/mapper /dev/block/by-name /dev/block/bootdevice/by-name; do
             for file in $avb $avb$slot; do
               if [ -e $avbpath/$file ]; then
