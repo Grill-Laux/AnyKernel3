@@ -4,7 +4,7 @@
 ### AnyKernel setup
 # global properties
 properties() { '
-kernel.string=Kernel with ksu by GL
+kernel.string=Kernel For OP6X BY GL
 do.devicecheck=0
 do.modules=0
 do.systemless=1
@@ -29,7 +29,7 @@ set_perm_recursive 0 0 750 750 $ramdisk/init* $ramdisk/sbin;
 } # end attributes
 
 # boot shell variables
-block=/dev/block/platform/omap/omap_hsmmc.0/by-name/boot;
+block=auto;
 is_slot_device=auto;
 ramdisk_compression=auto;
 patch_vbmeta_flag=auto;
